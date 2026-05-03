@@ -66,9 +66,18 @@ joined_data AS (
 )
 
 SELECT 
-    * EXCEPT(phase_rank, latest_ingested_at_local),
+    extracted_date,
+    run_phase,
+    products,
+    total_listings,
+    min_price,
+    max_price,
+    avg_price,
+    price_range,
     ROUND(avg_price - LAG(avg_price) OVER(
-        PARTITION BY products 
-        ORDER BY extracted_date ASC, phase_rank ASC
-    ), 2) AS avg_price_change
+      PARTITION BY products 
+      ORDER BY extracted_date ASC, phase_rank ASC
+    ), 2) AS avg_price_change,
+    cheapest_seller,
+    priciest_seller
 FROM joined_data
