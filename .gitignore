@@ -1,0 +1,15 @@
+ENV
+.env
+credentials
+*.json
+__pycache__
+config
+logs
+plugins
+postgres_data
+landing_zone
+seeds
+profiles.yml
+.user.yml
+target
+README.md

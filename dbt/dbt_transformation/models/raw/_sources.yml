@@ -1,0 +1,7 @@
+version: 2
+
+sources:
+  - name: smartphone_raw_source
+    schema: de_smartphone_raw    
+    tables:
+      - name: raw_smartphone_pricing   
