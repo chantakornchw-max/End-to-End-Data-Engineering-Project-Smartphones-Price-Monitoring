@@ -131,7 +131,7 @@ def _remove_file_from_local(ti):
 with DAG(
     dag_id='flagship_smartphones_pipeline',
     start_date=timezone.datetime(2026, 4, 22),
-    schedule='0 3,15 * * *',
+    schedule='0 2,14 * * *',
     catchup=False,
 ):
     
