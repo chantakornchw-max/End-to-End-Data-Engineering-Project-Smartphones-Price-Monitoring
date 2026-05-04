@@ -1,61 +1,48 @@
 # End-to-End Data Engineering Project: Smartphones Price Monitoring
 
-ctk
----
+## Business Case 
 
-**fluk chantakorn**
+## Pipeline Architecture
 
-_ฉันทกร_
+![Pipeline Architecture](./images/Pipeline_Architecture.png)
 
-## quotes
->They said "Stay where you're valued" then i come to you
->
->**ctk**
+### Tech Stacks
+
+- **Docker:** Used for containerizing the entire data pipeline environment, ensuring consistent execution across different platforms and simplifying infrastructure management.
+
+- **Apache Airflow:** The core orchestration engine used to schedule, automate, and monitor the end-to-end workflow, from data ingestion to the final transformation.
+
+- **Google Cloud Storage (GCS):** Acts as the project's Data Lake, providing scalable object storage for landing and archiving raw data files before processing.
+
+- **BigQuery:** A serverless, highly scalable cloud data warehouse used to store structured data and execute complex analytical queries at high speed.
+
+- **dbt (Data Build Tool):** The transformation layer used to clean, model, and prepare data within BigQuery using SQL, implementing the Medallion Architecture (Raw, Staging, and Marts).
+
+- **Power BI:** The visualization platform used to create interactive dashboards, turning processed data into actionable market insights.
+
+### Data Pipeline Flow
+
+- **Extract:** Automated data collection from SerpApi (Data Source) using Python scripts. These tasks are orchestrated by **Apache Airflow** and the extracted data is stored as raw files in **Google Cloud Storage (GCS)**.
+
+- **Load:** Raw data files from GCS are transferred to **BigQuery** raw tables, serving as the landing zone for the data warehouse.
+
+- **Transform:** Data is processed within BigQuery using **dbt**, following the Medallion Architecture to ensure data quality and integrity:
+
+	- **Raw Data (Raw):** The initial ingestion layer where data is kept in its original format to maintain a source of truth.
+
+	- **Cleaned Data (Staging):** Involves data cleaning, type casting, standardized naming conventions, and deduplication to create a reliable foundation.
+
+	- **Business-level Data (Marts):** The final analytical layer where data is joined and aggregated. This includes complex logic, making it ready for **Power BI** visualization.
 
 
-## insert image
-[micky mouse](https://charactercommunity.fandom.com/wiki/Mickey_Mouse)
+
+## Setup Instructions
 
 
-## insert image
-![micky mouse](https://static.wikia.nocookie.net/charactercommunity/images/d/d9/Mickey.png/revision/latest?cb=20200505132139)
 
 
-## List
-- NFC
-    - New york Giants
-    - Washington Commanders
-    - Philadelphia Eagles
-    - Dallas Cowboys
 
-## create table
-|Name|Position|
-|:----:|:----:|
-|Lebron James|PF|
-|Kevin Durant|PF|
----
 
-## insert code block
-```M Language 
-dim_date = 
-	VAR startYear = YEAR (MIN(tSuperstore[Order_date]) ) 
-	VAR endYear = YEAR(MAX(tSuperstore[Order_date]) )
-	RETURN
-	ADDCOLUMNS (
-	CALENDAR(
-	DATE(startYear,1,1),
-	DATE(endYear,12,31)
-	),
-	"Year", YEAR([Date]),
-    "Quater", "Q" & FORMAT([Date], "q"),
-    "QuarterID", QUARTER([Date]),
-	"Month", FORMAT([Date], "mmm"),
-	"MonthID", MONTH([Date]),
-	"MonthYear", FORMAT([Date], "mmm yyyy"),
-	"MonthYearID", INT(FORMAT([Date], "yyyymm")), 
-	"QuarterYear", "Q" & FORMAT([Date], "q yyyy"),
-	"QuarterYearID", INT(FORMAT([Date], "yyyyq")),
-    "Days of Week", FORMAT([Date], "ddd"),
-    "DayOfWeekID", WEEKDAY([Date], 1)
-	)
-```
+
+
+
