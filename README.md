@@ -4,9 +4,11 @@
 
 In the aggressive smartphone retail market, pricing is a primary battlefield for market share. For stakeholders and marketing strategy teams, staying ahead of competitors requires more than just observation; it demands automated, daily, actionable intelligence. Stakeholders within the pricing and sales teams rely on this pipeline for:
 
-- Optimizing competitive pricing strategies.
+- Optimizing competitive pricing strategies to stay relevant in the market.
 
 - Analyzing market trends and forecasting future movements.
+
+- Analyzing competitor behavior to identify price leaders, market influencers, and potential threats.
 
 - Replacing manual price checking with a robust automated pipeline, allowing the team to focus on strategy rather than data collection.
 
@@ -62,6 +64,88 @@ To demonstrate the pipeline's capability in handling high-frequency, real-world 
 
 	- **Business-level Data (Marts):** The final analytical layer where data is joined and aggregated. This includes complex logic, making it ready for **Power BI** visualization.
 
+### Source Code Map
+
+Below is a map of the core files and directories used in this project. Click the links to view the source code.
+
+| Component | File Link (Source Code) | Description |
+| :--- | :--- | :--- |
+| **Orchestration** | [`smartphones_pipeline.py`](./dags/smartphones_pipeline.py) | The Airflow DAG that manages and schedules the daily data pipeline execution. |
+| **Source Config (Raw)** | [`_sources.yml`](./dbt/dbt_transformation/models/raw/_sources.yml) | Defines the raw data sources. |
+| **Data Cleaning (Staging)** | [`stg_smartphone_pricing.sql`](./dbt/dbt_transformation/models/staging/stg_smartphone_pricing.sql) | Standardizes raw scraped data, handles type casting, and prepares data for the Marts layer. |
+| **Price Monitoring (Marts)** | [`mrt_daily_price_summary.sql`](./dbt/dbt_transformation/models/marts/mrt_daily_price_summary.sql) | Core SQL logic for calculating price shifts and run-over-run deltas for the monitoring dashboard. |
+| **Competitor Analysis (Marts)** | [`mrt_seller_performance.sql`](./dbt/dbt_transformation/models/marts/mrt_seller_performance.sql) | Aggregates seller behavior, including price leadership counts and rating performance. |
+| **Project Config** | [`dbt_project.yml`](./dbt/dbt_transformation/dbt_project.yml) | The main configuration file for the dbt project and resource paths. |
+
+## Data Visualization
+
+### Price Monitoring
+
+Instead of manually checking dozens of websites, this dashboard provides an automated way to track how smartphone prices move with every scheduled run. It’s designed to give the team a clear view of the market without the manual grind.
+
+- **Benchmarking (KPI Cards):**
+
+	- The cards at the top show the **Latest Min & Max prices** and   identify the **cheapest and priciest sellers**
+
+	- This gives the team a reliable market floor and market ceiling to help decide if our own prices need an adjustment.
+
+- **Price Trend (Line Chart):**
+
+	- Tracks price movements between Morning and Night updates, providing a more granular view of how prices shift within the day the day.
+
+	- The dashed line represents the 7-day average, serving as a baseline that helps the team instantly identify if the current price is above or below the weekly norm.
+
+- **Average Price Change:**
+
+	- This chart simply shows how much the average market price has increased or decreased compared to the very latest previous updated.
+
+	- It helps the team quickly identify which phone models just had a price correction so they can react immediately.
+
+- **Price Spread:**
+
+	- This shows the **difference between the highest and lowest price** for each model.
+
+	- A wide gap tells us that retailers are fighting hard on price for that specific model, signaling an opportunity for us to optimize our strategy and capture more customers.
+
+#### Actionable Insight
+
+Case Study: Xiaomi 17 Ultra 5G
+
+---
+
+### Competitor Analysis
+
+This dashboard shifts the focus from specific products to competitor behavior. It helps the team understand who is truly leading the market in terms of both price and reputation.
+
+- **Market Positioning (Bubble Chart):**
+
+	- This compares **Average Seller Price** vs. **Average Ratings**, with the **bubble size representing the volume of reviews**, allowing us to spot **high-threat competitors**—sellers who offer low prices and high ratings with a large review count, proving they are both competitive and highly trusted.
+
+	- The quadrant lines provide a quick way to see which sellers are positioned as **"Premium"** (high price, high rating) versus those competing purely on **"Value"** (low price, high rating).
+
+- **Price Leadership (Cheapest Count):**
+
+	- Instead of looking at a single price point, this chart tracks who consistently holds the **cheapest seller** across all listings.
+
+	- It identifies the most aggressive players in the market, showing who is most likely to drive price changes.
+
+- **Seller Price vs. Market Average:**
+
+	- This chart identifies the **"price cutters"** (green bars) and **"premium sellers"** (red bars).
+
+	- It shows exactly how much a specific seller is undercutting or overcharging compared to the market average, which is essential for adjusting our own pricing strategy.
+
+- **Seller Categories:**
+
+	- This breaks down the market landscape by **Seller Type** (e.g., Official Stores vs. E-Commerce Platforms).
+
+	- It helps the strategy team understand whether the current market trends are being driven by official brand movements or third-party retailers.
+
+#### Actionable Insight
+
+Case Study: AIS Store
+
+
 ## Setup Instructions
 
 ### 1. Prerequisites
@@ -72,13 +156,9 @@ Before you begin, ensure you have the following installed and configured on your
 
 - **Git:** For version control and cloning the repository.
 
-- **Google Cloud Platform Account:** Required for GCS and BigQuery. Your **Service Account JSON Key** must be assigned the following roles as seen in the configuration:
+- **Google Cloud Platform Account:** Required for GCS and BigQuery. Your Service Account JSON Key must be assigned the following 3 roles: **Storage Object Admin,** **BigQuery Job User,** and **BigQuery Data Editor**.
 
-	- Storage Object Admin
-
-	- BigQuery Job User
-
-	- BigQuery Data Editor
+	- **GCS Bucket:** Create a bucket to store raw JSON and processed data. Ensure the region matches your BigQuery location (e.g., `us-east1`).
 
 ### 2. Clone the repository
 
@@ -99,7 +179,7 @@ Now that you have the project folder, set up local environment:
 
 - **Environment Variables:** Create a `.env` file in the root directory and define `AIRFLOW_UID` to ensure proper container file permissions.
 
-- **dbt Configuration:** dbt requires a `profiles.yml` file to connect to BigQuery. Create a file named profiles.yml inside the `dbt/dbt_transformation/` directory with the following content:
+- **dbt Configuration:** dbt requires a `profiles.yml` file to connect to BigQuery. This allows you to run manual dbt commands for debugging directly via CLI. Create a file named profiles.yml inside the `dbt/dbt_transformation/` directory with the following content:
 
 	```YAML
 	dbt_transformation:
@@ -149,14 +229,47 @@ Once the containers are healthy, access `http://localhost:8080` to finish the se
 
 		- **Val:** Your specific Google Cloud Project ID.
 
+	- **GCS_BUCKET_NAME**
+
+		- **Key:** `gcs_bucket_name`
+
+		- **Val:** Your GCS Bucket name.
+
+	- **RAW_DATASET_ID**
+
+		- **Key:** `raw_dataset_id`
+
+		- **Val:** Your Raw Dataset name.
+
+	- **STAGING_DATASET_ID**
+
+		- **Key:** `staging_dataset_id`
+
+		- **Val:** Your Staging Dataset name.
+
+	- **MARTS_DATASET_ID**
+
+		- **Key:** `marts_dataset_id`
+
+		- **Val:** Your Marts Dataset name.
+	
+	- **RAW_TABLE_ID**
+
+		- **Key:** `raw_table_id`
+
+		- **Val:** Your Raw Table name.
+
 ### 6. Running the Pipeline
 
 - **DAG:** Unpause and trigger the DAG to begin the ELT process for the target smartphone models.
 
+	- **Note:** The default schedule is set to run twice daily (02:00 and 14:00 UTC). You can customize the `schedule` and `start_date` in `dags/smartphones_pipeline.py` to match your preferred frequency.
+
 - **dbt Transformations:** The pipeline automatically handles transformations. However, you can manually trigger dbt models using:
 
 	```Bash
-	docker compose exec airflow-worker dbt run
+	# To run dbt manually inside the container
+	docker compose exec airflow-worker bash -c "cd /opt/airflow/dbt/dbt_transformation && dbt run"
 	```
 
 - **Clean Up:** To stop and remove the containers, use:
@@ -164,4 +277,23 @@ Once the containers are healthy, access `http://localhost:8080` to finish the se
 	```Bash
 	docker compose down
 	```
+## Project Title
+- Business Case
+
+	- Project Scope
+
+- Pipeline Architecture
+
+	- Tech Stacks
+
+	- Data Pipeline Flow
+
+	- Source Code Map
+
+- Data Visualization
+
+- Setup Instructions
+
+	- 1-6
+
 
