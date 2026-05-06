@@ -21,8 +21,16 @@ from cosmos.profiles import GoogleCloudServiceAccountDictProfileMapping
 
 URL = "https://serpapi.com/search.json"
 STAGING_PATH = "/opt/airflow/landing_zone"
+
+# Variables Configuration
 API_KEY = Variable.get("serp_api_key")
 GCP_PROJECT_ID = Variable.get("gcp_project_id")
+GCS_BUCKET_NAME = Variable.get("gcs_bucket_name")
+RAW_DATASET_ID = Variable.get("raw_dataset_id")
+STAGING_DATASET_ID = Variable.get("staging_dataset_id")
+MARTS_DATASET_ID = Variable.get("marts_dataset_id")
+RAW_TABLE_ID = Variable.get("raw_table_id")
+
 
 target_products = [
         "iPhone 17 Pro Max",
@@ -105,7 +113,7 @@ def _upload_from_local_to_gcs(ti, **context):
     gcs_hook = GCSHook(gcp_conn_id = 'gcp_key_conn')
     try:
         gcs_hook.upload(
-            bucket_name="flagship-smartphones-bucket",
+            bucket_name=GCS_BUCKET_NAME,
             object_name=f"smartphones_data/{date_stamp}/{os.path.basename(local_file_path)}",
             filename=local_file_path 
             )
@@ -159,7 +167,7 @@ with DAG(
     create_raw_dataset_in_bq = BigQueryCreateEmptyDatasetOperator(
         task_id='create_raw_dataset_in_bq',
         project_id=GCP_PROJECT_ID,
-        dataset_id='de_smartphone_raw',
+        dataset_id=RAW_DATASET_ID,
         exists_ok=True, 
         location='us-east1', 
         gcp_conn_id='gcp_key_conn',
@@ -169,8 +177,8 @@ with DAG(
     create_raw_table_in_bq = BigQueryCreateEmptyTableOperator(
         task_id="create_raw_table_in_bq",
         project_id=GCP_PROJECT_ID,
-        dataset_id='de_smartphone_raw',
-        table_id='raw_smartphone_pricing',
+        dataset_id=RAW_DATASET_ID,
+        table_id=RAW_TABLE_ID,
         exists_ok=True,
         location='us-east1',                      
         gcp_conn_id="gcp_key_conn", 
@@ -187,9 +195,9 @@ with DAG(
 
     upload_from_gcs_to_bq = GCSToBigQueryOperator(
         task_id='upload_from_gcs_to_bq',
-        bucket='flagship-smartphones-bucket',
+        bucket=GCS_BUCKET_NAME,
         source_objects=['smartphones_data/{{ ds }}/*.json'],
-        destination_project_dataset_table=f"{GCP_PROJECT_ID}.de_smartphone_raw.raw_smartphone_pricing",
+        destination_project_dataset_table=f"{GCP_PROJECT_ID}.{RAW_DATASET_ID}.{RAW_TABLE_ID}",
         gcp_conn_id='gcp_key_conn',
         write_disposition='WRITE_APPEND', 
         autodetect=False,
@@ -204,7 +212,7 @@ with DAG(
     create_staging_dataset_in_bq = BigQueryCreateEmptyDatasetOperator(
         task_id="create_staging_dataset_in_bq",
         project_id=GCP_PROJECT_ID,
-        dataset_id="de_smartphone_staging", 
+        dataset_id=STAGING_DATASET_ID, 
         gcp_conn_id="gcp_key_conn",
         exists_ok=True,
         location="us-east1",                       
@@ -214,7 +222,7 @@ with DAG(
     create_marts_dataset_in_bq = BigQueryCreateEmptyDatasetOperator(
         task_id="create_marts_dataset_in_bq",
         project_id=GCP_PROJECT_ID,
-        dataset_id="de_smartphone_marts",
+        dataset_id=MARTS_DATASET_ID,
         location="us-east1",
         gcp_conn_id="gcp_key_conn",
         exists_ok=True,
@@ -231,7 +239,7 @@ with DAG(
                 conn_id="gcp_key_conn", 
                 profile_args={
                     "project": GCP_PROJECT_ID, 
-                    "dataset": "de_smartphone_staging", 
+                    "dataset": STAGING_DATASET_ID, 
                     "location": "us-east1",
                 },
             ),
