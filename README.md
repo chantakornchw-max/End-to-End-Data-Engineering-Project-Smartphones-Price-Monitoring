@@ -1,5 +1,35 @@
 # End-to-End Data Engineering Project: Smartphones Price Monitoring
 
+An automated end-to-end data pipeline designed to track and analyze smartphone pricing across multiple e-commerce platforms. This project leverages the **Modern Data Stack** to transform raw marketplace data into strategic pricing intelligence.
+
+
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54" />
+  <img src="https://img.shields.io/badge/sql-4479A1?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Airflow-017CEE?style=for-the-badge&logo=Apache%20Airflow&logoColor=white" />
+  <img src="https://img.shields.io/badge/Google_Cloud_Storage-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" />
+  <img src="https://img.shields.io/badge/BigQuery-4285F4?style=for-the-badge&logo=google-bigquery&logoColor=white" />
+  <img src="https://img.shields.io/badge/dbt-FF694B?style=for-the-badge&logo=dbt&logoColor=white" />
+  <img src="https://img.shields.io/badge/Power_BI-F2C811?style=for-the-badge&logo=powerbi&logoColor=black" />
+</p>
+
+
+## Table of Contents
+* [Business Case](#business-case)
+    * [Project Scope](#project-scope)
+* [Pipeline Architecture](#pipeline-architecture)
+    * [Tech Stacks](#tech-stacks)
+    * [Data Pipeline Flow](#data-pipeline-flow)
+    * [Source Code Map](#source-code-map)
+    * [Data Modeling](#data-modeling)
+* [Data Visualization](#data-visualization)
+    * [Price Monitoring](#price-monitoring)
+    * [Competitor Analysis](#competitor-analysis)
+* [Challenges](#challenges)
+* [Setup Instructions](#setup-instructions)
+
+
 ## Business Case 
 
 In the aggressive smartphone retail market, pricing is a primary battlefield for market share. For stakeholders and marketing strategy teams, staying ahead of competitors requires more than just observation; it demands automated, daily, actionable intelligence. Stakeholders within the pricing and sales teams rely on this pipeline for:
@@ -32,6 +62,7 @@ To demonstrate the pipeline's capability in handling high-frequency, real-world 
 
 **Scalability:** The pipeline is architected to be product-agnostic. While currently configured for these 5 flagship models, the system can be easily scaled to track hundreds of different product categories by simply updating the target configuration.
 
+
 ## Pipeline Architecture
 
 ![Pipeline Architecture](./images/Pipeline_Architecture.png)
@@ -46,7 +77,7 @@ To demonstrate the pipeline's capability in handling high-frequency, real-world 
 
 - **BigQuery:** A serverless, highly scalable cloud data warehouse used to store structured data and execute complex analytical queries at high speed.
 
-- **dbt (Data Build Tool):** The transformation layer used to clean, model, and prepare data within BigQuery using SQL, implementing the Medallion Architecture (Raw, Staging, and Marts).
+- **dbt (Data Build Tool):** The transformation layer used to clean, model, and prepare data within BigQuery using SQL, implementing the **Medallion Architecture** (Raw, Staging, and Marts).
 
 - **Power BI:** The visualization platform used to create interactive dashboards, turning processed data into actionable market insights.
 
@@ -75,11 +106,79 @@ Below is a map of the core files and directories used in this project. Click the
 | **Data Cleaning (Staging)** | [`stg_smartphone_pricing.sql`](./dbt/dbt_transformation/models/staging/stg_smartphone_pricing.sql) | Standardizes raw scraped data, handles type casting, and prepares data for the Marts layer. |
 | **Price Monitoring (Marts)** | [`mrt_daily_price_summary.sql`](./dbt/dbt_transformation/models/marts/mrt_daily_price_summary.sql) | Core SQL logic for calculating price shifts and run-over-run deltas for the monitoring dashboard. |
 | **Competitor Analysis (Marts)** | [`mrt_seller_performance.sql`](./dbt/dbt_transformation/models/marts/mrt_seller_performance.sql) | Aggregates seller behavior, including price leadership counts and rating performance. |
+| **Product Dimensions** | [`dim_products.sql`](./dbt/dbt_transformation/models/marts/dim_products.sql) | Contains unique smartphone models. |
+| **Seller Dimensions** | [`dim_sellers.sql`](./dbt/dbt_transformation/models/marts/dim_sellers.sql) | Stores seller names and seller categories to support competitor analysis.. |
 | **Project Config** | [`dbt_project.yml`](./dbt/dbt_transformation/dbt_project.yml) | The main configuration file for the dbt project and resource paths. |
+
+### Data Modeling
+
+### Star Schema
+
+To ensure high performance and flexible analysis, I implemented a **Star Schema** model within Power BI. This structure separates business metrics (Facts) from descriptive attributes (Dimensions).
+
+![Star Schema](./images/Star_Schema.png)
+
+- **Fact Tables:** Core metrics are split into `mrt_daily_price_summary` for price monitoring and `mrt_seller_performance` for competitor analysis.
+
+- **Dimension Tables:** `dim_products`, `dim_sellers`, and a custom `dim_date` provide context and filtering capabilities across all reports.
+
+### Custom Date Dimension 
+
+I used **DAX** to create a custom `dim_date` table instead of relying on the default system calendar.This allows for advanced time-based analysis.
+
+```M Language 
+dim_date = 
+	VAR startYear = YEAR(MIN(mrt_daily_price_summary[extracted_date]) ) 
+	VAR endYear = YEAR(MAX(mrt_daily_price_summary[extracted_date]) )
+	RETURN
+	ADDCOLUMNS (
+	CALENDAR(
+	DATE(startYear,1,1),
+	DATE(endYear,12,31)
+	),
+	"Year", YEAR([Date]),
+    "Quater", "Q" & FORMAT([Date], "q"),
+    "QuarterID", QUARTER([Date]),
+	"Month", FORMAT([Date], "mmm"),
+	"MonthID", MONTH([Date]),
+	"MonthYear", FORMAT([Date], "mmm yyyy"),
+	"MonthYearID", INT(FORMAT([Date], "yyyymm")), 
+	"QuarterYear", "Q" & FORMAT([Date], "q yyyy"),
+	"QuarterYearID", INT(FORMAT([Date], "yyyyq")),
+    "Days of Week", FORMAT([Date], "ddd"),
+    "DayOfWeekID", WEEKDAY([Date], 1)
+	)
+```
+### Measures
+
+To drive deeper insights, I developed custom measures using **DAX** to handle dynamic benchmarking. A key example is the **Price Gap from Market Avg**, which powers the competitor benchmarking visualizations.
+
+```M Language 
+Price Gap from Market Avg = 
+VAR MarketAvg = CALCULATE(
+    AVERAGE(mrt_seller_performance[avg_seller_price]), 
+    ALL(dim_sellers)
+)
+VAR SellerPrice = AVERAGE(mrt_seller_performance[avg_seller_price])
+
+RETURN 
+IF(
+    NOT ISBLANK(SellerPrice),
+    SellerPrice - MarketAvg
+)
+```
+
+- **Logic:** This measure calculates the difference between an individual seller's price and the overall market average. 
+- **Key Technique:** It uses the `ALL()` function to bypass specific seller filters, ensuring the market baseline remains constant for comparison.
+
 
 ## Data Visualization
 
+Transforming raw scraped data into decision-ready insights. These dashboards eliminate the guesswork, turning market noise into the clear information needed to make strategic pricing moves.
+
 ### Price Monitoring
+
+![Price Monitoring](./images/Price_Monitoring.png)
 
 Instead of manually checking dozens of websites, this dashboard provides an automated way to track how smartphone prices move with every scheduled run. It’s designed to give the team a clear view of the market without the manual grind.
 
@@ -109,11 +208,17 @@ Instead of manually checking dozens of websites, this dashboard provides an auto
 
 #### Actionable Insight
 
-Case Study: Xiaomi 17 Ultra 5G
+**Case Study: OPPO Find X9 Pro 5G**
 
----
+Taking the **OPPO Find X9 Pro 5G (16+512GB)** as an example, we can see exactly how the pricing team can turn these visualizations into action:
+
+- **Insight:** The line chart reveals that the price is currently on a sharp uptrend, hitting an average of **฿43,166**, which is well above the 7-day baseline of **฿40,943**. More importantly, there is a massive Price Spread of **฿8,669**—the highest in the category—showing a huge gap between the cheapest seller **(SiamTV at ฿39,999)** and the priciest **(Lazada at ฿48,668)**.
+
+- **Action:** With the market price currently **spiking (+฿3,419)**, the team should avoid aggressive price-cutting for now. Instead, we have a prime opportunity to position our price in the **"Sweet Spot"**—slightly above SiamTV but significantly lower than the market average. This allows us to capture value-seeking customers while maintaining a much healthier profit margin than our competitors.
 
 ### Competitor Analysis
+
+![Competitor Analysis](./images/Competitor_Analysis.png)
 
 This dashboard shifts the focus from specific products to competitor behavior. It helps the team understand who is truly leading the market in terms of both price and reputation.
 
@@ -143,8 +248,31 @@ This dashboard shifts the focus from specific products to competitor behavior. I
 
 #### Actionable Insight
 
-Case Study: AIS Store
+**Case Study: AIS Store**
 
+By analyzing **AIS Store**, we can identify the most aggressive player in the market and determine how to respond:
+
+- **Insight:** AIS Store is currently our primary **"Price Leader."** In the Market Positioning chart, they sit in the high-trust, low-price quadrant with an average price of **฿37,135.60** and over **8,000 reviews**. They aren't just undercutting the market average by **฿6,674.63**; they are doing it with high reliability **(4.8 rating)**, making them a dominant threat.
+
+- **Action:** Since it’s difficult to compete with AIS Store on price alone due to their scale, the team should use them as a **"Price Floor" benchmark**. Our strategy should be to monitor their stock levels closely—whenever AIS Store is "Out of Stock," it creates a golden window for us to increase our prices back toward the market average to maximize profit without losing customers to them.
+
+### Power BI public
+
+**Note:** Data collected during April - May 2026
+
+## Challenges
+
+During the production run of this pipeline (2026-04-24 to 2026-05-07), I monitored the data quality and identified a specific anomaly that provides insight into real-world data collection:
+
+![Challenges](./images/missing_data.png)
+
+* **Incident:** On **2026-05-05 (Night Run)**, data for the **Apple iPhone 17 Pro Max was missing** from the dataset, while other products were ingested normally.
+
+* **Observations:** The product returned to the dataset in the subsequent runs (2026-05-06 Morning/Night) without any changes to the scraper logic.
+
+* **Root Cause Analysis:** This likely indicates a transient issue at the source, likely due to a temporary **unlisting** or **Out of Stock** status on the e-commerce platform during that specific scrape window.
+
+* **Engineering Takeaway:** This case highlights the importance of Idempotency and Historical Monitoring. Because the pipeline is automated and runs twice daily, we can identify these gaps and ensure that a single missing data point doesn't break the entire analytical model, while still maintaining the integrity of the overall price trend.
 
 ## Setup Instructions
 
@@ -290,7 +418,13 @@ Once the containers are healthy, access `http://localhost:8080` to finish the se
 
 	- Source Code Map
 
+	- Data Modeling
+
 - Data Visualization
+
+	- Price Monitoring
+
+	- Competitor Analysis
 
 - Setup Instructions
 
