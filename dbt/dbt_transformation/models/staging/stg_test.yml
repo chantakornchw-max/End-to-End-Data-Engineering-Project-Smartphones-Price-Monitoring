@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_smartphone_pricing
+    columns:
+      - name: products
+        tests:
+          - not_null
+
+      - name: sellers
+        tests:
+          - not_null
+
+      - name: price
+        tests:
+          - not_null
+
+      - name: extracted_date
+        tests:
+          - not_null
+
+      - name: run_phase
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Morning', 'Night']
+

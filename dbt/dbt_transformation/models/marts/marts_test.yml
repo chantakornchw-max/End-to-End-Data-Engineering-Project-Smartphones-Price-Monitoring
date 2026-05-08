@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: dim_products
+    columns:
+      - name: products
+        tests:
+          - unique   
+          - not_null
+
+  - name: dim_sellers
+    columns:
+      - name: sellers
+        tests:
+          - unique   
+          - not_null
+
+  - name: mrt_daily_price_summary
+    columns:
+      - name: products
+        tests:
+          - not_null
+      - name: extracted_date
+        tests:
+          - not_null
+
+  - name: mrt_seller_performance
+    columns:
+      - name: sellers
+        tests: 
+          - not_null
+      - name: extracted_date
+        tests:
+          - not_null
