@@ -22,6 +22,7 @@ An automated end-to-end data pipeline designed to track and analyze smartphone p
     * [Tech Stacks](#tech-stacks)
     * [Data Pipeline Flow](#data-pipeline-flow)
     * [Source Code Map](#source-code-map)
+	* [Data Quality & Testing](#data-quality--testing)
     * [Data Modeling](#data-modeling)
 * [Data Visualization](#data-visualization)
     * [Price Monitoring](#price-monitoring)
@@ -108,11 +109,30 @@ Below is a map of the core files and directories used in this project. Click the
 | **Competitor Analysis (Marts)** | [`mrt_seller_performance.sql`](./dbt/dbt_transformation/models/marts/mrt_seller_performance.sql) | Aggregates seller behavior, including price leadership counts and rating performance. |
 | **Product Dimensions** | [`dim_products.sql`](./dbt/dbt_transformation/models/marts/dim_products.sql) | Contains unique smartphone models. |
 | **Seller Dimensions** | [`dim_sellers.sql`](./dbt/dbt_transformation/models/marts/dim_sellers.sql) | Stores seller names and seller categories to support competitor analysis.. |
-| **Project Config** | [`dbt_project.yml`](./dbt/dbt_transformation/dbt_project.yml) | The main configuration file for the dbt project and resource paths. |
+| **Data Quality (Staging)** | [`stg_test.yml`](./dbt/dbt_transformation/models/staging/stg_test.yml) | The main configuration file for the dbt project and resource paths. |
+| **Data Quality (Marts)** | [`marts_test.yml`](./dbt/dbt_transformation/models/marts/marts_test.yml) | Defines schema tests (Not Null, Accepted Values) to ensure raw data integrity.. |
+| **Project Config** | [`dbt_project.yml`](./dbt/dbt_transformation/dbt_project.yml) | Validates business logic (Unique keys) to prevent data duplication in the final reports.. |
+
+### Data Quality & Testing
+
+To ensure data reliability and maintain a **single source of truth**, I implemented automated data quality checks using **dbt tests**. This ensures that the analytical insights are built on a foundation of clean and validated data.
+
+- **Staging Layer:** Focuses on schema validation and basic cleaning rules before any business logic is applied.
+
+	- **Not Null Tests:** Applied to critical columns such as `price`, `products`, and `extracted_date`to prevent missing data.
+
+	- **Accepted Values:** Validates the `run_phase` column to ensure it contains only 'Morning' or 'Night', preventing ingestion errors.
+
+- **Marts Layer:** Ensures the final analytical models conform to the Star Schema requirements.
+
+	- **Unique Key Tests:** Verified that `im_products` and `dim_sellers` contain zero duplicates.
+
+	- **Data Consistency:** Enforced `not_null` constraints on primary keys and foreign keys across all Fact and Dimension tables.
+
 
 ### Data Modeling
 
-### Star Schema
+#### Star Schema
 
 To ensure high performance and flexible analysis, I implemented a **Star Schema** model within Power BI. This structure separates business metrics (Facts) from descriptive attributes (Dimensions).
 
@@ -122,7 +142,7 @@ To ensure high performance and flexible analysis, I implemented a **Star Schema*
 
 - **Dimension Tables:** `dim_products`, `dim_sellers`, and a custom `dim_date` provide context and filtering capabilities across all reports.
 
-### Custom Date Dimension 
+#### Custom Date Dimension 
 
 I used **DAX** to create a custom `dim_date` table instead of relying on the default system calendar.This allows for advanced time-based analysis.
 
@@ -149,7 +169,7 @@ dim_date =
     "DayOfWeekID", WEEKDAY([Date], 1)
 	)
 ```
-### Measures
+#### Measures
 
 To drive deeper insights, I developed custom measures using **DAX** to handle dynamic benchmarking. A key example is the **Price Gap from Market Avg**, which powers the competitor benchmarking visualizations.
 
@@ -256,9 +276,6 @@ By analyzing **AIS Store**, we can identify the most aggressive player in the ma
 
 - **Action:** Since it’s difficult to compete with AIS Store on price alone due to their scale, the team should use them as a **"Price Floor" benchmark**. Our strategy should be to monitor their stock levels closely—whenever AIS Store is "Out of Stock," it creates a golden window for us to increase our prices back toward the market average to maximize profit without losing customers to them.
 
-### Power BI public
-
-**Note:** Data collected during April - May 2026
 
 ## Challenges
 
@@ -405,29 +422,5 @@ Once the containers are healthy, access `http://localhost:8080` to finish the se
 	```Bash
 	docker compose down
 	```
-## Project Title
-- Business Case
-
-	- Project Scope
-
-- Pipeline Architecture
-
-	- Tech Stacks
-
-	- Data Pipeline Flow
-
-	- Source Code Map
-
-	- Data Modeling
-
-- Data Visualization
-
-	- Price Monitoring
-
-	- Competitor Analysis
-
-- Setup Instructions
-
-	- 1-6
 
 
