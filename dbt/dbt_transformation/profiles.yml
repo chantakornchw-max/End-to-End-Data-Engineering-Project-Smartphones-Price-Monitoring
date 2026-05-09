@@ -1,0 +1,16 @@
+dbt_transformation: 
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: modern-webbing-493413-r8            
+      dataset: de_smartphone_staging                
+      threads: 1                                    
+      keyfile: "{{ env_var('DBT_SA_KEY_PATH', 'C:/DataEngineering_Project/smartphone-pipeline/credentials/JSON_key.json') }}"   
+      location: us-east1                                                               
+  target: dev
+
+
+# C:/DataEngineering_Project/smartphone-pipeline/credentials/JSON_key.json
+# /opt/airflow/credentials/JSON_key.json 
+# docker compose exec airflow-worker dbt run
