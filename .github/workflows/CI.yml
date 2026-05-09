@@ -25,7 +25,9 @@ jobs:
 
       - name: Authenticate with GCP
         run: |
-          echo "${{ secrets.GCP_GH_KEY }}" > ./gcp_key.json
+          echo "$GCP_KEY" > ./gcp_key.json
+        env:
+          GCP_KEY: ${{ secrets.GCP_GH_KEY }}
 
       - name: Run dbt tests
         env:
