@@ -9,7 +9,6 @@ plugins
 postgres_data
 landing_zone
 seeds
-profiles.yml
 .user.yml
 target
 
