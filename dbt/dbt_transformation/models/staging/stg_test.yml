@@ -23,5 +23,6 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['Morning', 'Night']
+              arguments:
+                values: ['Morning', 'Night']
 
