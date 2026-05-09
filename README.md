@@ -22,7 +22,7 @@ An automated end-to-end data pipeline designed to track and analyze smartphone p
     * [Tech Stacks](#tech-stacks)
     * [Data Pipeline Flow](#data-pipeline-flow)
     * [Source Code Map](#source-code-map)
-	* [Data Quality & Testing](#data-quality--testing)
+	* [Data Quality & Continuous Integration (CI)](#data-quality--continuous-integration-ci)
     * [Data Modeling](#data-modeling)
 * [Data Visualization](#data-visualization)
     * [Price Monitoring](#price-monitoring)
@@ -110,12 +110,15 @@ Below is a map of the core files and directories used in this project. Click the
 | **Product Dimensions** | [`dim_products.sql`](./dbt/dbt_transformation/models/marts/dim_products.sql) | Contains unique smartphone models. |
 | **Seller Dimensions** | [`dim_sellers.sql`](./dbt/dbt_transformation/models/marts/dim_sellers.sql) | Stores seller names and seller categories to support competitor analysis.. |
 | **Data Quality (Staging)** | [`stg_test.yml`](./dbt/dbt_transformation/models/staging/stg_test.yml) | The main configuration file for the dbt project and resource paths. |
-| **Data Quality (Marts)** | [`marts_test.yml`](./dbt/dbt_transformation/models/marts/marts_test.yml) | Defines schema tests (Not Null, Accepted Values) to ensure raw data integrity.. |
+| **Data Quality (Marts)** | [`marts_test.yml`](./dbt/dbt_transformation/models/marts/marts_test.yml) | Defines schema tests (Not Null, Accepted Values) to ensure raw data integrity. |
+| **CI Pipeline** | [`CI.yml`](./.github/workflows/CI.yml) | Automated GitHub Actions workflow that triggers dbt tests to ensure data quality on every push or PR. |
 | **Project Config** | [`dbt_project.yml`](./dbt/dbt_transformation/dbt_project.yml) | Validates business logic (Unique keys) to prevent data duplication in the final reports.. |
 
-### Data Quality & Testing
+### Data Quality & Continuous Integration (CI)
 
-To ensure data reliability and maintain a **single source of truth**, I implemented automated data quality checks using **dbt tests**. This ensures that the analytical insights are built on a foundation of clean and validated data.
+To ensure data reliability and maintain a **single source of truth**, I implemented automated data quality checks using **dbt tests** integrated into a **GitHub Actions CI pipeline**.
+
+####  dbt Tests
 
 - **Staging Layer:** Focuses on schema validation and basic cleaning rules before any business logic is applied.
 
@@ -125,9 +128,19 @@ To ensure data reliability and maintain a **single source of truth**, I implemen
 
 - **Marts Layer:** Ensures the final analytical models conform to the Star Schema requirements.
 
-	- **Unique Key Tests:** Verified that `im_products` and `dim_sellers` contain zero duplicates.
+	- **Unique Key Tests:** Verified that `dim_products` and `dim_sellers` contain zero duplicates.
 
 	- **Data Consistency:** Enforced `not_null` constraints on primary keys and foreign keys across all Fact and Dimension tables.
+
+#### Automated CI Workflow (GitHub Actions)
+
+- **Automated Execution:** The workflow triggers on every `push` or `pull_request` to the main branch.
+
+- **Quality Control:** Currently passing 14/14 tests, ensuring that no broken logic or dirty data reaches the production BigQuery environment.
+
+	![CI_dbt_test](./images/CI_dbt_test.png)
+
+- **Secure Integration:** Managed GCP credentials securely using GitHub Secrets to maintain environment integrity.
 
 
 ### Data Modeling
