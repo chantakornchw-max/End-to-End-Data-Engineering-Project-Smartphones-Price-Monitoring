@@ -70,7 +70,7 @@ To demonstrate the pipeline's capability in handling high-frequency, real-world 
 
 ### Tech Stacks
 
-- **Docker:** Used for containerizing the entire data pipeline environment, ensuring consistent execution across different platforms and simplifying infrastructure management.
+- **Docker:** Used for containerizing the orchestration engine (Apache Airflow). This ensures a consistent environment for scheduling, monitoring, and triggering tasks across the pipeline without local dependency issues.
 
 - **Apache Airflow:** The core orchestration engine used to schedule, automate, and monitor the end-to-end workflow, from data ingestion to the final transformation.
 
