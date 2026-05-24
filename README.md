@@ -355,7 +355,7 @@ Now that you have the project folder, set up local environment:
 
 ### 4. Start the System
 
-This project uses a custom Dockerfile to install `astronomer-cosmos` and `dbt-bigquery` onto the Airflow base image. To build and start the system, run:
+This project uses a custom Dockerfile to install all required Python dependencies defined in `requirements.txt` (including `astronomer-cosmos` and `dbt-bigquery`) onto the Airflow base image. To build and start the system, run:
 
 ```Bash
 # Build custom images and start services in detached mode
