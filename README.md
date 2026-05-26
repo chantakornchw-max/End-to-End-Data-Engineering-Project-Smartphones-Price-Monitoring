@@ -80,6 +80,8 @@ To demonstrate the pipeline's capability in handling high-frequency, real-world 
 
 - **dbt (Data Build Tool):** The transformation layer used to clean, model, and prepare data within BigQuery using SQL, implementing the **Medallion Architecture** (Raw, Staging, and Marts).
 
+- **GitHub Actions:** Implements Continuous Integration/Continuous Deployment (CI/CD) to automate data quality checks. It triggers **dbt tests** to validate data integrity, ensuring that only clean and reliable data reaches the final visualization layer.
+
 - **Power BI:** The visualization platform used to create interactive dashboards, turning processed data into actionable market insights.
 
 ### Data Pipeline Flow
