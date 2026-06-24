@@ -22,9 +22,9 @@ An automated end-to-end data pipeline designed to track and analyze smartphone p
     * [Tech Stacks](#tech-stacks)
     * [Data Pipeline Flow](#data-pipeline-flow)
     * [Source Code Map](#source-code-map)
-	* [Data Quality & Continuous Integration (CI)](#data-quality--continuous-integration-ci)
-    * [Data Modeling](#data-modeling)
+* [Data Quality & Continuous Integration (CI)](#data-quality--continuous-integration-ci)
 * [Data Visualization](#data-visualization)
+	* [Data Modeling](#data-modeling)
     * [Price Monitoring](#price-monitoring)
     * [Competitor Analysis](#competitor-analysis)
 * [Challenges](#challenges)
@@ -116,7 +116,7 @@ Below is a map of the core files and directories used in this project. Click the
 | **CI Pipeline** | [`CI.yml`](./.github/workflows/CI.yml) | Automated GitHub Actions workflow that triggers dbt tests to ensure data quality on every push or PR. |
 | **Project Config** | [`dbt_project.yml`](./dbt/dbt_transformation/dbt_project.yml) | Validates business logic (Unique keys) to prevent data duplication in the final reports.. |
 
-### Data Quality & Continuous Integration (CI)
+## Data Quality & Continuous Integration (CI)
 
 To ensure data reliability and maintain a **single source of truth**, I implemented automated data quality checks using **dbt tests** integrated into a **GitHub Actions CI pipeline**.
 
@@ -144,6 +144,8 @@ To ensure data reliability and maintain a **single source of truth**, I implemen
 
 - **Secure Integration:** Managed GCP credentials securely using GitHub Secrets to maintain environment integrity.
 
+
+## Data Visualization
 
 ### Data Modeling
 
@@ -206,8 +208,6 @@ IF(
 - **Logic:** This measure calculates the difference between an individual seller's price and the overall market average. 
 - **Key Technique:** It uses the `ALL()` function to bypass specific seller filters, ensuring the market baseline remains constant for comparison.
 
-
-## Data Visualization
 
 Transforming raw scraped data into decision-ready insights. These dashboards eliminate the guesswork, turning market noise into the clear information needed to make strategic pricing moves.
 
